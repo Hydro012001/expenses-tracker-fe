@@ -10,6 +10,7 @@ interface User {
 interface UserStoreState {
   user: User;
   setUser: (user: Partial<User>) => void;
+  addUser: (user: User) => void;
   fecthUser: () => void;
   clearUser: () => void;
 }
@@ -28,6 +29,14 @@ export const userStore = create<UserStoreState>()((set) => ({
     try {
       const result = await api.get("/user/get-user");
       set({ user: result.data });
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  },
+  addUser: async (user: User) => {
+    try {
+      const result = await api.post("/signup", user);
+      console.log(result.data);
     } catch (error) {
       console.error("Error:", error);
     }

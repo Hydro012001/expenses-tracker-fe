@@ -20,10 +20,11 @@ interface ExpensesStoreState {
   expensesFetch: ExpensesResponse;
   expensesLocal: Expenses[];
   setExpenses: (newExpenses: Partial<Expenses>) => void;
-  getExpenses: () => void;
+  getExpenses: (budgteId: number) => void;
   expensesLocalSave: (newExpenses: Expenses[]) => void;
   saveExpense: (newExpenses: Expenses[]) => Promise<void>;
   clear: () => void;
+  clearLocal: () => void;
 }
 
 export const expensesStore = create<ExpensesStoreState>()((set) => ({
@@ -40,10 +41,9 @@ export const expensesStore = create<ExpensesStoreState>()((set) => ({
   setExpenses: (newExpenses) =>
     set((state) => ({ expenses: { ...state.expenses, ...newExpenses } })),
 
-  getExpenses: async () => {
-    console.log("Expenses Get");
+  getExpenses: async (budgteId: number) => {
     try {
-      const result = await api.get("/expenses/get-expenses/" + 1);
+      const result = await api.get("/expenses/get-expenses/" + budgteId);
       set({ expensesFetch: result.data });
     } catch (error) {
       console.error("Error:", error);
@@ -70,5 +70,9 @@ export const expensesStore = create<ExpensesStoreState>()((set) => ({
         expensesType: "",
         userId: 0,
       },
+    })),
+  clearLocal: () =>
+    set(() => ({
+      expensesLocal: [],
     })),
 }));

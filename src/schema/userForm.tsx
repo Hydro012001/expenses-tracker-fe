@@ -16,3 +16,10 @@ export const userFormSchema = z.object({
   //   }),
   password: z.string(),
 });
+
+export const signUpFormSchema = z.object({
+  email: z.string().email({ message: "Invalid email address" }),
+  name: z.string(),
+  confirmPassword: z.string(),
+  password: z.string(),
+});

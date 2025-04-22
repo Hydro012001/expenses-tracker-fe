@@ -19,7 +19,7 @@ export default function Navbar({ children }: NavbarProps) {
               <span className="sr-only">Toggle navigation menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left">
+          <SheetContent side="left" className="pl-2">
             <NavLink to="#" className="mr-6 hidden lg:flex">
               <MountainIcon className="h-6 w-6" />
               <span className="sr-only">Acme Inc</span>
@@ -32,12 +32,12 @@ export default function Navbar({ children }: NavbarProps) {
                 Dashboard
               </NavLink>
 
-              <NavLink
+              {/* <NavLink
                 to="/expenses"
                 className="flex w-full items-center py-2 text-lg font-semibold"
               >
                 Expenses
-              </NavLink>
+              </NavLink> */}
               <NavLink
                 to="/profile"
                 className="flex w-full items-center py-2 text-lg font-semibold"

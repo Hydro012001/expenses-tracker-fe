@@ -5,7 +5,8 @@ interface Budget {
   id?: number;
   amount: string;
   budgetType: string;
-  range: string;
+  startDate: string;
+  endDate: string;
 }
 
 interface BudgetExpense {
@@ -25,7 +26,7 @@ interface BudgetStoreState {
   budgetFetch: BudgetResponse;
   setBudget: (newBudget: Partial<Budget>) => void;
   getBudgetByID: (budgetId: string) => void;
-  saveBudget: (newBudget: Budget[]) => void;
+  saveBudget: (newBudget: Budget) => Promise<void>;
   getBudgetByDateRange: (currentDate: string) => void;
 }
 
@@ -37,14 +38,16 @@ export const budgetStore = create<BudgetStoreState>()((set) => ({
   budget: {
     amount: "",
     budgetType: "",
-    range: "",
+    startDate: "",
+    endDate: "",
   },
   totalBudgetExpenses: {
     budget: {
       id: 0,
       amount: "",
       budgetType: "",
-      range: "",
+      startDate: "",
+      endDate: "",
     },
     remaining: 0,
     totalExpenses: 0,
@@ -66,14 +69,14 @@ export const budgetStore = create<BudgetStoreState>()((set) => ({
       const result = await api.post("/budget/get-budget", {
         currentDate: currentDate,
       });
-      console.log(result.data);
+
       set({ totalBudgetExpenses: result.data });
     } catch (error) {
       console.error("Error:", error);
     }
   },
 
-  saveBudget: async (budgetLocal: Budget[]) => {
+  saveBudget: async (budgetLocal: Budget): Promise<void> => {
     try {
       const result = await api.post("/budget/add", budgetLocal);
       console.log(result.data);

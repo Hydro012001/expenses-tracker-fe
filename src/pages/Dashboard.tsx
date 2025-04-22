@@ -10,7 +10,14 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   PieChart,
   LineChart,
@@ -20,6 +27,7 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
+  Cell,
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/custom/datepicker";
@@ -38,16 +46,16 @@ import {
 } from "@/components/ui/select";
 import { DatePickerWithRange } from "@/components/custom/daterange";
 
-const expensesData = [
-  { id: 1, amount: 200, date: "2025-03-01", type: "Food" },
-  { id: 2, amount: 500, date: "2025-03-05", type: "Rent" },
-  { id: 3, amount: 100, date: "2025-03-10", type: "Transport" },
-];
-
-const budgetLimit = 1500;
-
 export default function Dashboard() {
-  const [selectedMonth, setSelectedMonth] = useState("March");
+  const [selectedMonth, setSelectedMonth] = useState("April");
+  const COLORS = [
+    "#8884d8",
+    "#82ca9d",
+    "#ffc658",
+    "#ff8042",
+    "#8dd1e1",
+    "#d0ed57",
+  ];
   const {
     expensesFetch,
     getExpenses,
@@ -57,35 +65,44 @@ export default function Dashboard() {
     expensesLocalSave,
     clear,
     saveExpense,
+    clearLocal,
   } = expensesStore();
-  const { getBudgetByDateRange, totalBudgetExpenses } = budgetStore();
+  const {
+    getBudgetByDateRange,
+    totalBudgetExpenses,
+    setBudget,
+    budget,
+    saveBudget,
+  } = budgetStore();
+  const budgetId = totalBudgetExpenses.budget?.id;
+  const date: Date = new Date(); // Or use new Date('2025-04-12') for a specific date
 
+  const options: Intl.DateTimeFormatOptions = {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  };
+
+  const formattedDate: string = date.toLocaleDateString("en-US", options);
   useEffect(() => {
-    getExpenses();
-    const date: Date = new Date();
+    getExpenses(Number(budgetId));
 
-    const options: Intl.DateTimeFormatOptions = {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    };
-
-    const formattedDate: string = date.toLocaleDateString("en-US", options);
     getBudgetByDateRange(formattedDate);
-  }, [getExpenses, getBudgetByDateRange]);
+  }, [getExpenses, getBudgetByDateRange, budgetId, formattedDate]);
 
-  const filteredExpenses = expensesData.filter(
+  const filteredExpenses = expensesFetch.data.filter(
     (expense) =>
-      new Date(expense.date).toLocaleString("default", { month: "long" }) ===
-      selectedMonth
+      new Date(String(expense.createdAt)).toLocaleString("default", {
+        month: "long",
+      }) === selectedMonth
   );
-  const totalExpenses = filteredExpenses.reduce(
-    (sum, expense) => sum + expense.amount,
-    0
-  );
+  const maxAmount = Math.max(...filteredExpenses.map((e) => Number(e.amount)));
+  const paddedMax = maxAmount + 100;
+
   const categoryBreakdown = Object.entries(
     filteredExpenses.reduce<Record<string, number>>((acc, expense) => {
-      acc[expense.type] = (acc[expense.type] || 0) + expense.amount;
+      acc[expense.expensesType] =
+        (acc[expense.expensesType] || 0) + Number(expense.amount);
       return acc;
     }, {})
   ).map(([name, value]) => ({ name, value }));
@@ -101,15 +118,14 @@ export default function Dashboard() {
 
   const handleSave = async () => {
     await saveExpense(expensesLocal);
-    const date: Date = new Date(); // Or use new Date('2025-04-12') for a specific date
 
-    const options: Intl.DateTimeFormatOptions = {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    };
+    getBudgetByDateRange(formattedDate);
 
-    const formattedDate: string = date.toLocaleDateString("en-US", options);
+    getExpenses(Number(budgetId));
+    clearLocal();
+  };
+  const handleSaveBudget = async () => {
+    await saveBudget(budget);
     getBudgetByDateRange(formattedDate);
   };
 
@@ -120,7 +136,9 @@ export default function Dashboard() {
           Total Expenses: ₱ {totalBudgetExpenses.totalExpenses}
         </Label>
         <DatePicker />
-        <Button onClick={() => alert("Exporting CSV...")}>Export as CSV</Button>
+        <Button onClick={() => alert("Exporting CSV...")} disabled>
+          Export as CSV
+        </Button>
       </div>
 
       <div className="grid grid-cols-12 gap-4">
@@ -136,22 +154,49 @@ export default function Dashboard() {
                       <Plus className="cursor-pointer text-primary/70 hover:text-primary/100" />
                     </DialogTrigger>
                     <DialogContent className="p-5 pr-5">
+                      <DialogHeader>
+                        <DialogTitle>Budget</DialogTitle>
+                      </DialogHeader>
                       <Label>Budget Range</Label>
-                      <DatePickerWithRange />
+                      <DatePickerWithRange
+                        onChange={(daterange) =>
+                          setBudget({
+                            startDate: String(daterange?.from),
+                            endDate: String(daterange?.to),
+                          })
+                        }
+                      />
                       <div className="flex flex-col space-y-1.5">
                         <Label htmlFor="name">Budget</Label>
                         <Input
                           id="amount"
                           placeholder="Enter your budget"
                           onChange={(e) =>
-                            setExpenses({ amount: e.target.value })
+                            setBudget({ amount: e.target.value })
                           }
-                          value={expenses.amount}
+                          value={budget.amount}
                         />
                       </div>
-                      <Button className="cursor-pointer mt-3" variant="default">
-                        Save
-                      </Button>
+                      <div className="flex flex-col space-y-1.5">
+                        <Label htmlFor="name">Budget Type</Label>
+                        <Input
+                          id="budgettype"
+                          placeholder="Enter the budget type"
+                          onChange={(e) =>
+                            setBudget({ budgetType: e.target.value })
+                          }
+                          value={budget.budgetType}
+                        />
+                      </div>
+                      <DialogClose>
+                        <Button
+                          className="cursor-pointer mt-3"
+                          variant="default"
+                          onClick={handleSaveBudget}
+                        >
+                          Save
+                        </Button>
+                      </DialogClose>
                     </DialogContent>
                   </Dialog>
                 </>
@@ -317,7 +362,7 @@ export default function Dashboard() {
                 <TableRow>
                   <TableHead>Date</TableHead>
                   <TableHead>Type</TableHead>
-                  <TableHead>Amount</TableHead>
+                  <TableHead>Amount (₱)</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -325,7 +370,7 @@ export default function Dashboard() {
                   <TableRow key={expense.id}>
                     <TableCell>{expense.createdAt}</TableCell>
                     <TableCell>{expense.expensesType}</TableCell>
-                    <TableCell>${expense.amount}</TableCell>
+                    <TableCell>{expense.amount}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -340,10 +385,14 @@ export default function Dashboard() {
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={filteredExpenses}>
-                <XAxis dataKey="date" />
-                <YAxis />
+                <XAxis dataKey="createdAt" />
+                <YAxis domain={[0, paddedMax]} />
                 <Tooltip />
-                <Line type="monotone" dataKey="amount" stroke="#8884d8" />
+                <Line
+                  type="monotone"
+                  dataKey="amount"
+                  stroke="var(--primary)"
+                />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -364,9 +413,15 @@ export default function Dashboard() {
                   cx="50%"
                   cy="50%"
                   outerRadius={100}
-                  fill="var(--primary)"
                   label
-                />
+                >
+                  {categoryBreakdown.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[index % COLORS.length]}
+                    />
+                  ))}
+                </Pie>
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>

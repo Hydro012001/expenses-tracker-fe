@@ -17,7 +17,6 @@ function App() {
           <Route element={<Layout />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/about" element={<About />} />
-
             <Route path="/profile" element={<Profile />} />
           </Route>
         </Route>

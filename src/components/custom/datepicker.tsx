@@ -18,6 +18,7 @@ export function DatePicker() {
     <Popover>
       <PopoverTrigger asChild>
         <Button
+          disabled={true}
           variant={"outline"}
           className={cn(
             "w-40 justify-start text-left font-normal",
