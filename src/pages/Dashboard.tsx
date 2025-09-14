@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
+import { format } from "date-fns";
 import {
   Table,
   TableHeader,
@@ -30,7 +30,6 @@ import {
   Cell,
 } from "recharts";
 import { Button } from "@/components/ui/button";
-import { DatePicker } from "@/components/custom/datepicker";
 import { expensesStore } from "@/store/expensesStore";
 import { Plus } from "lucide-react";
 import { budgetStore } from "@/store/budgetStore";
@@ -45,9 +44,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DatePickerWithRange } from "@/components/custom/daterange";
+import { DatePickerWithRangePopover } from "@/components/custom/daterangepopover";
+import { getCategoryBreakdown } from "@/utils/pieHelper";
 
 export default function Dashboard() {
-  const [selectedMonth, setSelectedMonth] = useState("April");
+  const defaultEndDate = useMemo(() => new Date(), []);
+  const selectedMonth = format(defaultEndDate, "LLLL");
   const COLORS = [
     "#8884d8",
     "#82ca9d",
@@ -66,6 +68,8 @@ export default function Dashboard() {
     clear,
     saveExpense,
     clearLocal,
+    expensesDate,
+    setExpensesDate,
   } = expensesStore();
   const {
     getBudgetByDateRange,
@@ -73,39 +77,30 @@ export default function Dashboard() {
     setBudget,
     budget,
     saveBudget,
+    getBudgetDate,
   } = budgetStore();
   const budgetId = totalBudgetExpenses.budget?.id;
-  const date: Date = new Date(); // Or use new Date('2025-04-12') for a specific date
-
-  const options: Intl.DateTimeFormatOptions = {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  };
-
-  const formattedDate: string = date.toLocaleDateString("en-US", options);
-  useEffect(() => {
-    getExpenses(Number(budgetId));
-
-    getBudgetByDateRange(formattedDate);
-  }, [getExpenses, getBudgetByDateRange, budgetId, formattedDate]);
-
-  const filteredExpenses = expensesFetch.data.filter(
-    (expense) =>
-      new Date(String(expense.createdAt)).toLocaleString("default", {
-        month: "long",
-      }) === selectedMonth
+  const { filteredExpenses, breakdown, paddedMax } = getCategoryBreakdown(
+    expensesFetch,
+    selectedMonth
   );
-  const maxAmount = Math.max(...filteredExpenses.map((e) => Number(e.amount)));
-  const paddedMax = maxAmount + 100;
+  // const budgetStart = totalBudgetExpenses?.budget?.startDate
+  //   ? new Date(totalBudgetExpenses.budget.startDate)
+  //   : null;
 
-  const categoryBreakdown = Object.entries(
-    filteredExpenses.reduce<Record<string, number>>((acc, expense) => {
-      acc[expense.expensesType] =
-        (acc[expense.expensesType] || 0) + Number(expense.amount);
-      return acc;
-    }, {})
-  ).map(([name, value]) => ({ name, value }));
+  const endDate = expensesDate.endDate ?? defaultEndDate;
+
+  useEffect(() => {
+    getBudgetByDateRange();
+  }, [getBudgetByDateRange]);
+
+  useEffect(() => {
+    getExpenses(
+      Number(budgetId),
+      endDate,
+      totalBudgetExpenses.budget.startDate
+    );
+  }, [budgetId, getExpenses, endDate, totalBudgetExpenses.budget.startDate]);
 
   const handlePartialSave = () => {
     const data = {
@@ -119,14 +114,18 @@ export default function Dashboard() {
   const handleSave = async () => {
     await saveExpense(expensesLocal);
 
-    getBudgetByDateRange(formattedDate);
+    getBudgetByDateRange();
 
-    getExpenses(Number(budgetId));
+    getExpenses(
+      Number(budgetId),
+      endDate,
+      totalBudgetExpenses.budget.startDate
+    );
     clearLocal();
   };
   const handleSaveBudget = async () => {
     await saveBudget(budget);
-    getBudgetByDateRange(formattedDate);
+    getBudgetByDateRange();
   };
 
   return (
@@ -135,14 +134,23 @@ export default function Dashboard() {
         <Label className="text-lg font-semibold flex-1/2">
           Total Expenses: ₱ {totalBudgetExpenses.totalExpenses}
         </Label>
-        <DatePicker />
-        <Button onClick={() => alert("Exporting CSV...")} disabled>
-          Export as CSV
-        </Button>
+        <DatePickerWithRangePopover
+          value={{
+            from: totalBudgetExpenses.budget.startDate
+              ? new Date(totalBudgetExpenses.budget.startDate)
+              : undefined,
+            to: endDate,
+          }}
+          onChange={(daterange) => {
+            setExpensesDate({
+              startDate: daterange.from,
+              endDate: daterange.to,
+            });
+          }}
+        />
       </div>
 
       <div className="grid grid-cols-12 gap-4">
-        {/* Budget Progress */}
         <Card className="col-span-8 ">
           <CardHeader>
             <div className="flex justify-between ">
@@ -192,6 +200,7 @@ export default function Dashboard() {
                         <Button
                           className="cursor-pointer mt-3"
                           variant="default"
+                          size="lg"
                           onClick={handleSaveBudget}
                         >
                           Save
@@ -225,7 +234,6 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Expenses Table */}
         <Card className="col-span-4 row-span-2">
           <CardHeader>
             <div className="flex justify-between ">
@@ -235,9 +243,9 @@ export default function Dashboard() {
                 <DialogTrigger asChild>
                   <Plus className="cursor-pointer text-primary/70 hover:text-primary/100" />
                 </DialogTrigger>
-                <DialogContent className="w-auto max-w-[90vw] p-0">
+                <DialogContent className="w-[50%]  max-w-[90vw] p-0">
                   <div className="inline-block p-4">
-                    <div className="w-96 p-1">
+                    <div className=" p-1">
                       <div className="w-[100%]">
                         <div className="grid w-full items-center gap-4 mb-4">
                           <div className="flex flex-col space-y-1.5">
@@ -288,11 +296,15 @@ export default function Dashboard() {
                         </div>
 
                         <div className="flex justify-between mb-4">
-                          <Button variant="outline" onClick={clear}>
+                          <Button
+                            variant="outline"
+                            className="w-[40%]"
+                            onClick={clear}
+                          >
                             Clear
                           </Button>
                           <Button
-                            className="cursor-pointer"
+                            className="cursor-pointer w-[40%]"
                             variant="default"
                             onClick={handlePartialSave}
                           >
@@ -301,7 +313,7 @@ export default function Dashboard() {
                         </div>
 
                         <Label>Review Expenses</Label>
-                        <div className="max-h-[14.5rem] min-h-[14.5rem] w-96  overflow-auto">
+                        <div className="max-h-[14.5rem] min-h-[14.5rem]   overflow-auto">
                           <Table>
                             <TableHeader>
                               <TableRow>
@@ -320,36 +332,17 @@ export default function Dashboard() {
                                   <TableCell>{item.expensesType}</TableCell>
                                 </TableRow>
                               ))}
-
-                              {/* Add more rows to test scrolling */}
                             </TableBody>
                           </Table>
                         </div>
                         <Button
-                          className="cursor-pointer"
+                          className="cursor-pointer w-[100%]"
                           variant={"default"}
                           onClick={handleSave}
                         >
-                          {" "}
                           Save
                         </Button>
                       </div>
-                      {/* <Card className=" w-96 max-h-96">
-        <CardHeader>
-          <CardTitle>Add Expenses</CardTitle>
-          <CardDescription>Add your expenses to track them.</CardDescription>
-        </CardHeader>
-        <CardContent></CardContent>
-        <CardFooter className="flex justify-between"></CardFooter>
-      </Card> */}
-
-                      {/* <Card className="w-2xl">
-        <CardHeader>
-          <CardTitle></CardTitle>
-        </CardHeader>
-        <CardContent></CardContent>
-        <CardFooter className="flex justify-end"></CardFooter>
-      </Card> */}
                     </div>
                   </div>
                 </DialogContent>
@@ -377,7 +370,7 @@ export default function Dashboard() {
             </Table>
           </CardContent>
         </Card>
-        {/* Bar Chart */}
+
         <Card className="col-span-4">
           <CardHeader>
             <CardTitle>Monthly Expense Trends</CardTitle>
@@ -398,7 +391,6 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Pie Chart */}
         <Card className="col-span-4">
           <CardHeader>
             <CardTitle>Expense Breakdown</CardTitle>
@@ -407,7 +399,7 @@ export default function Dashboard() {
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={categoryBreakdown}
+                  data={breakdown}
                   dataKey="value"
                   nameKey="name"
                   cx="50%"
@@ -415,7 +407,7 @@ export default function Dashboard() {
                   outerRadius={100}
                   label
                 >
-                  {categoryBreakdown.map((entry, index) => (
+                  {breakdown.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={COLORS[index % COLORS.length]}
@@ -428,8 +420,6 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Export Button */}
     </div>
   );
 }

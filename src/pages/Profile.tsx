@@ -32,7 +32,7 @@ export default function Profile() {
         <div>
           <h1 className="text-3xl font-bold">{user.name}</h1>
           <p className="text-gray-500">{user.email}</p>
-          <p className="text-gray-400 text-sm">Joined: January 2023</p>
+          <p className="text-gray-400 text-sm">Joined: {user.createdAt}</p>
         </div>
       </section>
 

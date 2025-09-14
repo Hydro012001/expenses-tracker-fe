@@ -5,6 +5,7 @@ interface User {
   name?: string;
   email: string;
   password: string;
+  createdAt?: string;
 }
 
 interface UserStoreState {
