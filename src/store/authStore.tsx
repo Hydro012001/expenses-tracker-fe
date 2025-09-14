@@ -20,5 +20,7 @@ export const useAuthStore = create<AuthState>(() => ({
   },
   logout: () => {
     console.log("Logout");
+    document.cookie = "token=; path=/; max-age=0";
+    window.location.href = "/login";
   },
 }));

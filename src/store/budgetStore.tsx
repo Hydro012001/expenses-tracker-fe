@@ -5,8 +5,8 @@ interface Budget {
   id?: number;
   amount: string;
   budgetType: string;
-  startDate: string;
-  endDate: string;
+  startDate: Date;
+  endDate: Date;
 }
 
 interface BudgetExpense {
@@ -27,7 +27,8 @@ interface BudgetStoreState {
   setBudget: (newBudget: Partial<Budget>) => void;
   getBudgetByID: (budgetId: string) => void;
   saveBudget: (newBudget: Budget) => Promise<void>;
-  getBudgetByDateRange: (currentDate: string) => void;
+  getBudgetByDateRange: () => Promise<void>;
+  getBudgetDate: (currentDate: string) => void;
 }
 
 export const budgetStore = create<BudgetStoreState>()((set) => ({
@@ -38,16 +39,16 @@ export const budgetStore = create<BudgetStoreState>()((set) => ({
   budget: {
     amount: "",
     budgetType: "",
-    startDate: "",
-    endDate: "",
+    startDate: new Date(),
+    endDate: new Date(),
   },
   totalBudgetExpenses: {
     budget: {
       id: 0,
       amount: "",
       budgetType: "",
-      startDate: "",
-      endDate: "",
+      startDate: new Date(),
+      endDate: new Date(),
     },
     remaining: 0,
     totalExpenses: 0,
@@ -64,13 +65,22 @@ export const budgetStore = create<BudgetStoreState>()((set) => ({
       console.error("Error:", error);
     }
   },
-  getBudgetByDateRange: async (currentDate: string) => {
+  getBudgetByDateRange: async () => {
     try {
-      const result = await api.post("/budget/get-budget", {
-        currentDate: currentDate,
-      });
+      const result = await api.get("/budget/get-budget");
 
       set({ totalBudgetExpenses: result.data });
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  },
+
+  getBudgetDate: async (currentDate: string) => {
+    try {
+      const result = await api.post("/budget/get-budget-date", {
+        currentDate: currentDate,
+      });
+      set({ budget: result.data });
     } catch (error) {
       console.error("Error:", error);
     }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signUpFormSchema, userFormSchema } from "@/schema/userForm";
@@ -17,9 +17,11 @@ import {
 } from "@/components/ui/form";
 import { z } from "zod";
 import { userStore } from "@/store/userStore";
+import { getCookie } from "@/utils/authUtils";
 
 function Login() {
-  const [isLogin, setIsLogin] = useState(true);
+  const [switchAuth, setSwitchAuth] = useState(true);
+  const isAuthenticated = getCookie("token");
   const loginUser = useAuthStore((state) => state.login);
   const { addUser } = userStore();
   const navigate = useNavigate();
@@ -52,8 +54,13 @@ function Login() {
   // Handle signup form submission
   const handleSignup = async (payload: User) => {
     addUser(payload);
-    setIsLogin(true);
+    setSwitchAuth(true);
   };
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/");
+    }
+  }, [isAuthenticated, navigate]);
 
   // useEffect(() => {
   //   if (isLogin) {
@@ -76,30 +83,30 @@ function Login() {
       <Card className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 shadow-xl rounded-2xl overflow-hidden">
         <div className="bg-gradient-to-br from-blue-300 to-indigo-600 text-white flex flex-col justify-center items-center p-8">
           <h2 className="text-3xl font-bold mb-4">
-            {isLogin ? "Welcome Back!" : "Join Us"}
+            {switchAuth ? "Welcome Back!" : "Join Us"}
           </h2>
           <p className="mb-6 text-center max-w-xs">
-            {isLogin
+            {switchAuth
               ? "Log in to stay on top of your spending and make smarter financial decisions."
               : "Create an account to begin tracking your expenses and taking control of your finances."}
           </p>
           <Button
             variant="outline"
             className="text-secondary-foreground border-white hover:bg-white hover:text-blue-600"
-            onClick={() => setIsLogin(!isLogin)}
+            onClick={() => setSwitchAuth(!switchAuth)}
           >
-            {isLogin ? "Create an account" : "Have an account? Login"}
+            {switchAuth ? "Create an account" : "Have an account? Login"}
           </Button>
         </div>
 
         <CardContent className="p-8">
           <CardHeader className="text-center mb-4">
             <CardTitle className="text-2xl">
-              {isLogin ? "Login" : "Sign Up"}
+              {switchAuth ? "Login" : "Sign Up"}
             </CardTitle>
           </CardHeader>
 
-          {isLogin ? (
+          {switchAuth ? (
             <Form key="login-form" {...form}>
               <form
                 onSubmit={form.handleSubmit(handleLogin)}

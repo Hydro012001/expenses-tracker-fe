@@ -2,16 +2,20 @@ import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { NavLink } from "react-router-dom";
 import { ReactNode } from "react";
-
+import { Moon, Sun } from "lucide-react";
+import { useTheme } from "@/components/theme-provider";
+import { useAuthStore } from "@/store/authStore";
 interface NavbarProps {
   children?: ReactNode;
 }
 export default function Navbar({ children }: NavbarProps) {
+  const { theme, setTheme } = useTheme();
+  const logout = useAuthStore((state) => state.logout);
   const navLinkClasses =
-    "group inline-flex h-9 w-max items-center justify-center rounded-md  px-4 py-2 text-sm font-medium transition-colors hover:bg-secondary hover:text-gray-900 focus:outline-none disabled:pointer-events-none disabled:opacity-50 dark:bg-gray-950 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:focus:bg-gray-800 dark:focus:text-gray-50";
+    "group inline-flex h-9 w-max items-center justify-center rounded-md  px-4 py-2 text-sm font-medium transition-colors hover:bg-secondary hover:text-gray-900  dark:hover:text-gray-50  focus:outline-none disabled:pointer-events-none disabled:opacity-50 ";
   return (
     <>
-      <header className="flex h-20 w-full shrink-0 items-center px-4 md:px-6 shadow">
+      <header className="flex h-15 w-full shrink-0 items-center px-4 md:px-6 shadow">
         <Sheet>
           <SheetTrigger asChild>
             <Button variant="outline" size="icon" className="lg:hidden">
@@ -53,7 +57,7 @@ export default function Navbar({ children }: NavbarProps) {
             </div>
           </SheetContent>
         </Sheet>
-        <NavLink to="#" className="mr-6 hidden lg:flex lg:items-center gap-2">
+        <NavLink to="#" className="mr-6 hidden lg:flex lg:items-center gap-2 ">
           <MountainIcon className="h-9 w-9" />
           <span className="font-bold text-primary">ExpTrack</span>
         </NavLink>
@@ -61,9 +65,7 @@ export default function Navbar({ children }: NavbarProps) {
           <NavLink
             to="/"
             className={({ isActive }) =>
-              `${navLinkClasses} ${
-                isActive ? "bg-primary text-white dark:bg-gray-800/50" : ""
-              }`
+              `${navLinkClasses} ${isActive ? "bg-primary text-white " : ""}`
             }
           >
             Dashboard
@@ -82,13 +84,24 @@ export default function Navbar({ children }: NavbarProps) {
           <NavLink
             to="/profile"
             className={({ isActive }) =>
-              `${navLinkClasses} ${
-                isActive ? "bg-primary text-white dark:bg-gray-800/50" : ""
-              }`
+              `${navLinkClasses} ${isActive ? "bg-primary text-white " : ""}`
             }
           >
             Profile
           </NavLink>
+          <button
+            onClick={logout}
+            className={`${navLinkClasses} text-left w-full cursor-pointer`}
+          >
+            Logout
+          </button>
+          <div className="py-1.5 cursor-pointer">
+            {theme == "light" ? (
+              <Moon onClick={() => setTheme("dark")} />
+            ) : (
+              <Sun onClick={() => setTheme("light")} />
+            )}
+          </div>
         </nav>
       </header>
 

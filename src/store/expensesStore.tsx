@@ -1,26 +1,37 @@
 import { api } from "@/utils/apiHelper";
 import { create } from "zustand";
 
-interface Expenses {
+export interface Expenses {
   id?: number;
   amount: string;
   expensesType: string;
   userId: number;
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
-interface ExpensesResponse {
+interface ExpensesDateRange {
+  startDate?: Date;
+  endDate?: Date;
+}
+
+export interface ExpensesResponse {
   data: Expenses[];
   totalAmount: number;
 }
 
 interface ExpensesStoreState {
+  expensesDate: ExpensesDateRange;
   expenses: Expenses;
   expensesFetch: ExpensesResponse;
   expensesLocal: Expenses[];
   setExpenses: (newExpenses: Partial<Expenses>) => void;
-  getExpenses: (budgteId: number) => void;
+  setExpensesDate: (expensesDate: ExpensesDateRange) => void;
+  getExpenses: (
+    budgteId: number,
+    endData: Date,
+    startDate: Date
+  ) => Promise<void>;
   expensesLocalSave: (newExpenses: Expenses[]) => void;
   saveExpense: (newExpenses: Expenses[]) => Promise<void>;
   clear: () => void;
@@ -38,12 +49,23 @@ export const expensesStore = create<ExpensesStoreState>()((set) => ({
     expensesType: "",
     userId: 0,
   },
+  expensesDate: {
+    startDate: new Date(),
+    endDate: new Date(),
+  },
   setExpenses: (newExpenses) =>
     set((state) => ({ expenses: { ...state.expenses, ...newExpenses } })),
-
-  getExpenses: async (budgteId: number) => {
+  setExpensesDate: (expensesDate: ExpensesDateRange) =>
+    set(() => ({
+      expensesDate: expensesDate,
+    })),
+  getExpenses: async (budgetId: number, endDate: Date, startDate: Date) => {
     try {
-      const result = await api.get("/expenses/get-expenses/" + budgteId);
+      const result = await api.post("/expenses/get-expenses", {
+        budgetId,
+        endDate,
+        startDate,
+      });
       set({ expensesFetch: result.data });
     } catch (error) {
       console.error("Error:", error);
