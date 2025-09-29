@@ -29,7 +29,7 @@ export default function Navbar() {
             </NavLink>
             <div className="grid gap-2 py-6">
               <NavLink
-                to="/"
+                to=""
                 className="flex w-full items-center py-2 text-lg font-semibold"
               >
                 Dashboard
@@ -42,7 +42,7 @@ export default function Navbar() {
                 Expenses
               </NavLink> */}
               <NavLink
-                to="/profile"
+                to="/#/profile"
                 className="flex w-full items-center py-2 text-lg font-semibold"
               >
                 Profile
@@ -56,13 +56,16 @@ export default function Navbar() {
             </div>
           </SheetContent>
         </Sheet>
-        <NavLink to="/" className="mr-6 hidden lg:flex lg:items-center gap-2 ">
+        <NavLink
+          to="/#/"
+          className="mr-6 hidden lg:flex lg:items-center gap-2 "
+        >
           <MountainIcon className="h-9 w-9" />
           <span className="font-bold text-primary">ExpTrack</span>
         </NavLink>
         <nav className="ml-auto hidden lg:flex gap-6">
           <NavLink
-            to="/"
+            to=""
             className={({ isActive }) =>
               `${navLinkClasses} ${isActive ? "bg-primary text-white " : ""}`
             }
