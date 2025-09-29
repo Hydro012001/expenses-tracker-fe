@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import {
@@ -31,7 +31,7 @@ import {
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import { expensesStore } from "@/store/expensesStore";
-import { Plus } from "lucide-react";
+import { Plus, ReceiptText } from "lucide-react";
 import { budgetStore } from "@/store/budgetStore";
 
 import { Input } from "@/components/ui/input";
@@ -46,10 +46,17 @@ import {
 import { DatePickerWithRange } from "@/components/custom/daterange";
 import { DatePickerWithRangePopover } from "@/components/custom/daterangepopover";
 import { getCategoryBreakdown } from "@/utils/pieHelper";
+import BudgetDropwdown from "@/components/services/budget_dropdown";
+import { useButtonStateStore } from "@/store/uiStateStore";
+import {
+  TooltipProvider,
+  Tooltip as ShadcnTooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 
 export default function Dashboard() {
-  const defaultEndDate = useMemo(() => new Date(), []);
-  const selectedMonth = format(defaultEndDate, "LLLL");
+  const { disabled, setDisabled } = useButtonStateStore();
   const COLORS = [
     "#8884d8",
     "#82ca9d",
@@ -59,8 +66,6 @@ export default function Dashboard() {
     "#d0ed57",
   ];
   const {
-    expensesFetch,
-    getExpenses,
     setExpenses,
     expenses,
     expensesLocal,
@@ -68,43 +73,45 @@ export default function Dashboard() {
     clear,
     saveExpense,
     clearLocal,
-    expensesDate,
-    setExpensesDate,
   } = expensesStore();
   const {
-    getBudgetByDateRange,
+    getBudgetExpenses,
     totalBudgetExpenses,
     setBudget,
     budget,
     saveBudget,
-    getBudgetDate,
+    selectBudgetIDData,
+    getBudget,
+    expensesDate,
+    setExpensesDate,
   } = budgetStore();
-  const budgetId = totalBudgetExpenses.budget?.id;
+
   const { filteredExpenses, breakdown, paddedMax } = getCategoryBreakdown(
-    expensesFetch,
-    selectedMonth
+    totalBudgetExpenses.budget_expenses.expenses,
+    String(expensesDate?.startDate),
+    String(expensesDate?.endDate)
   );
-  // const budgetStart = totalBudgetExpenses?.budget?.startDate
-  //   ? new Date(totalBudgetExpenses.budget.startDate)
-  //   : null;
-
-  const endDate = expensesDate.endDate ?? defaultEndDate;
 
   useEffect(() => {
-    getBudgetByDateRange();
-  }, [getBudgetByDateRange]);
-
-  useEffect(() => {
-    getExpenses(
-      Number(budgetId),
-      endDate,
-      totalBudgetExpenses.budget.startDate
+    if (!selectBudgetIDData || !totalBudgetExpenses.budget_expenses.startDate)
+      return;
+    getBudgetExpenses(
+      selectBudgetIDData,
+      expensesDate?.endDate,
+      expensesDate?.startDate
     );
-  }, [budgetId, getExpenses, endDate, totalBudgetExpenses.budget.startDate]);
+  }, [
+    setExpensesDate,
+    selectBudgetIDData,
+    getBudgetExpenses,
+    totalBudgetExpenses.budget_expenses.startDate,
+    expensesDate.endDate,
+    expensesDate.startDate,
+  ]);
 
   const handlePartialSave = () => {
     const data = {
-      budgetId: totalBudgetExpenses.budget.id,
+      budgetId: totalBudgetExpenses.budget_expenses.id,
       ...expenses,
     };
     expensesLocalSave([data]);
@@ -113,64 +120,100 @@ export default function Dashboard() {
 
   const handleSave = async () => {
     await saveExpense(expensesLocal);
-
-    getBudgetByDateRange();
-
-    getExpenses(
-      Number(budgetId),
-      endDate,
-      totalBudgetExpenses.budget.startDate
+    getBudgetExpenses(
+      selectBudgetIDData,
+      expensesDate?.endDate,
+      totalBudgetExpenses.budget_expenses.startDate
     );
     clearLocal();
   };
   const handleSaveBudget = async () => {
     await saveBudget(budget);
-    getBudgetByDateRange();
+    getBudget();
+    getBudgetExpenses(
+      selectBudgetIDData,
+      expensesDate?.endDate,
+      totalBudgetExpenses.budget_expenses.startDate
+    );
+
+    setDisabled(false);
   };
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex w-full justify-between items-center gap-2">
-        <Label className="text-lg font-semibold flex-1/2">
-          Total Expenses: ₱ {totalBudgetExpenses.totalExpenses}
-        </Label>
-        <DatePickerWithRangePopover
-          value={{
-            from: totalBudgetExpenses.budget.startDate
-              ? new Date(totalBudgetExpenses.budget.startDate)
-              : undefined,
-            to: endDate,
-          }}
-          onChange={(daterange) => {
-            setExpensesDate({
-              startDate: daterange.from,
-              endDate: daterange.to,
-            });
-          }}
-        />
+      <div className="flex w-full justify-between gap-2 ">
+        <div className="flex flex-col items-start ">
+          <Label className=" text-sm mb-1 flex items-center gap-1">
+            <ReceiptText className="" />
+            Total Expenses
+          </Label>
+          <p
+            className={`text-4xl font-bold ${
+              totalBudgetExpenses.remaining < 0 ? "text-red-600" : ""
+            }`}
+          >
+            ₱ {totalBudgetExpenses.totalExpenses}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <BudgetDropwdown />
+          <DatePickerWithRangePopover
+            disabled={disabled}
+            value={{
+              from: expensesDate.startDate,
+              to: expensesDate.endDate,
+            }}
+            onChange={(daterange) => {
+              setExpensesDate({
+                startDate: daterange?.from,
+                endDate: daterange?.to,
+              });
+            }}
+          />
+        </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-4">
-        <Card className="col-span-8 ">
+      <div className={`grid grid-cols-12 gap-4 `}>
+        {/* Budget Tracking */}
+        <Card
+          className={`col-span-8 border border-foreground  ${
+            totalBudgetExpenses.remaining < 0
+              ? "text-red-500 border-red-500"
+              : ""
+          }`}
+        >
           <CardHeader>
-            <div className="flex justify-between ">
-              <CardTitle>Budget Tracking</CardTitle>
+            <div className="flex justify-between items-center">
+              <CardTitle>Budget Tracking </CardTitle>
+
               {totalBudgetExpenses ? (
-                <>
+                <div>
                   <Dialog>
-                    <DialogTrigger>
-                      <Plus className="cursor-pointer text-primary/70 hover:text-primary/100" />
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={`border-foreground disabled:cursor-not-allowed  ${
+                          totalBudgetExpenses.remaining < 0
+                            ? "text-red-500 border-red-500"
+                            : ""
+                        }`}
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add
+                      </Button>
                     </DialogTrigger>
+
                     <DialogContent className="p-5 pr-5">
                       <DialogHeader>
                         <DialogTitle>Budget</DialogTitle>
                       </DialogHeader>
+
                       <Label>Budget Range</Label>
                       <DatePickerWithRange
                         onChange={(daterange) =>
                           setBudget({
-                            startDate: String(daterange?.from),
-                            endDate: String(daterange?.to),
+                            startDate: daterange?.from,
+                            endDate: daterange?.to,
                           })
                         }
                       />
@@ -178,6 +221,7 @@ export default function Dashboard() {
                         <Label htmlFor="name">Budget</Label>
                         <Input
                           id="amount"
+                          type="number"
                           placeholder="Enter your budget"
                           onChange={(e) =>
                             setBudget({ amount: e.target.value })
@@ -196,11 +240,14 @@ export default function Dashboard() {
                           value={budget.budgetType}
                         />
                       </div>
-                      <DialogClose>
+                      <DialogClose asChild>
                         <Button
-                          className="cursor-pointer mt-3"
+                          className="cursor-pointer mt-3 w-[100%]"
                           variant="default"
                           size="lg"
+                          disabled={Object.values(budget).some(
+                            (value) => !value
+                          )}
                           onClick={handleSaveBudget}
                         >
                           Save
@@ -208,40 +255,94 @@ export default function Dashboard() {
                       </DialogClose>
                     </DialogContent>
                   </Dialog>
-                </>
+                  <TooltipProvider>
+                    <ShadcnTooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="default"
+                          className="border-foreground disabled:cursor-not-allowed ml-2"
+                        >
+                          Set Active
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>This will set the budget as active</p>
+                      </TooltipContent>
+                    </ShadcnTooltip>
+                  </TooltipProvider>
+                </div>
               ) : (
                 ""
               )}
             </div>
           </CardHeader>
           <CardContent>
-            <div className="relative w-full bg-gray-200 rounded h-6">
-              <div
-                className="bg-primary h-6 rounded"
-                style={{
-                  width: `${
-                    (totalBudgetExpenses.totalExpenses /
-                      Number(totalBudgetExpenses.budget.amount)) *
-                    100
-                  }%`,
-                }}
-              ></div>
+            <div className="relative w-full bg-gray-200 rounded h-6 overflow-hidden">
+              {(() => {
+                const spent = totalBudgetExpenses.totalExpenses;
+                const budget = Number(
+                  totalBudgetExpenses.budget_expenses.amount
+                );
+                const percent = (spent / budget) * 100;
+
+                let barColor = "bg-white"; // default safe
+                if (percent > 0) {
+                  barColor = "bg-green-500";
+                } else if (percent >= 100) {
+                  barColor = "bg-red-500"; // over budget
+                } else if (percent >= 70) {
+                  barColor = "bg-yellow-500"; // almost at limit
+                }
+
+                return (
+                  <div
+                    className={`h-6 rounded transition-all ${barColor}`}
+                    style={{
+                      width: `${Math.min(percent, 100)}%`,
+                    }}
+                  ></div>
+                );
+              })()}
             </div>
+
             <div className="flex justify-between mt-2 text-sm">
-              <span>Spent: ₱ {totalBudgetExpenses.totalExpenses}</span>
-              <span>Remaining: ₱ {totalBudgetExpenses.remaining}</span>
+              <span>
+                Spent: ₱ {totalBudgetExpenses.totalExpenses.toLocaleString()}
+              </span>
+              <span
+                className={
+                  totalBudgetExpenses.remaining < 0
+                    ? "font-semibold text-red-500"
+                    : ""
+                }
+              >
+                Remaining: ₱ {totalBudgetExpenses.remaining.toLocaleString()}
+              </span>
             </div>
+            {totalBudgetExpenses.remaining < 0 && (
+              <p className=" text-xs mt-1 font-medium">
+                ⚠️ You’ve exceeded your budget!
+              </p>
+            )}
           </CardContent>
         </Card>
 
-        <Card className="col-span-4 row-span-2">
+        {/* Recent Expenses */}
+        <Card className="col-span-4 row-span-2 border border-foreground">
           <CardHeader>
-            <div className="flex justify-between ">
+            <div className="flex justify-between items-center">
               <CardTitle>Recent Expenses</CardTitle>
 
               <Dialog>
                 <DialogTrigger asChild>
-                  <Plus className="cursor-pointer text-primary/70 hover:text-primary/100" />
+                  <Button
+                    disabled={disabled}
+                    variant="outline"
+                    className="border-foreground disabled:cursor-not-allowed"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add
+                  </Button>
                 </DialogTrigger>
                 <DialogContent className="w-[50%]  max-w-[90vw] p-0">
                   <div className="inline-block p-4">
@@ -359,64 +460,99 @@ export default function Dashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {expensesFetch?.data?.map((expense) => (
-                  <TableRow key={expense.id}>
-                    <TableCell>{expense.createdAt}</TableCell>
-                    <TableCell>{expense.expensesType}</TableCell>
-                    <TableCell>{expense.amount}</TableCell>
+                {totalBudgetExpenses?.budget_expenses.expenses?.length ? (
+                  totalBudgetExpenses.budget_expenses.expenses.map(
+                    (expense) => (
+                      <TableRow key={expense.id}>
+                        <TableCell>
+                          {format(new Date(expense.createdAt), "MMM d, yyyy")}
+                        </TableCell>
+                        <TableCell>{expense.expensesType}</TableCell>
+                        <TableCell>{expense.amount}</TableCell>
+                      </TableRow>
+                    )
+                  )
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center">
+                      No expenses found
+                    </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
           </CardContent>
         </Card>
 
-        <Card className="col-span-4">
+        {/* Monthly Expenses Line Charts */}
+        <Card className="col-span-4 border border-foreground">
           <CardHeader>
-            <CardTitle>Monthly Expense Trends</CardTitle>
+            <CardTitle>Monthly Expense Trends </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={filteredExpenses}>
-                <XAxis dataKey="createdAt" />
-                <YAxis domain={[0, paddedMax]} />
-                <Tooltip />
-                <Line
-                  type="monotone"
-                  dataKey="amount"
-                  stroke="var(--primary)"
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            {filteredExpenses.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={filteredExpenses}>
+                  <XAxis
+                    dataKey="createdAt"
+                    tickFormatter={(value) => format(new Date(value), "MM/dd")}
+                  />
+                  <YAxis domain={[0, paddedMax]} />
+                  <Tooltip
+                    labelFormatter={(value) => format(new Date(value), "PPpp")}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="amount"
+                    stroke="var(--primary)"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex  justify-center h-[300px]">
+                <Label className="text-center font-light">
+                  No expenses found
+                </Label>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        <Card className="col-span-4">
+        {/* Expenses Break Pie Charts */}
+        <Card className="col-span-4 border border-foreground">
           <CardHeader>
             <CardTitle>Expense Breakdown</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={breakdown}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  label
-                >
-                  {breakdown.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            {breakdown.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={breakdown}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={100}
+                    label
+                  >
+                    {breakdown.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex  justify-center h-[300px]">
+                <Label className="text-center font-light">
+                  No expenses found
+                </Label>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

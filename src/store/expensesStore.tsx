@@ -1,13 +1,16 @@
 import { api } from "@/utils/apiHelper";
+import { format } from "date-fns";
 import { create } from "zustand";
+import { useAlertStore } from "./alertStore";
+import { handleAxiosError } from "@/utils/axiosErrorHelper";
 
 export interface Expenses {
   id?: number;
   amount: string;
   expensesType: string;
   userId: number;
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 interface ExpensesDateRange {
@@ -16,8 +19,7 @@ interface ExpensesDateRange {
 }
 
 export interface ExpensesResponse {
-  data: Expenses[];
-  totalAmount: number;
+  expenses: Expenses[];
 }
 
 interface ExpensesStoreState {
@@ -40,14 +42,15 @@ interface ExpensesStoreState {
 
 export const expensesStore = create<ExpensesStoreState>()((set) => ({
   expensesFetch: {
-    data: [],
-    totalAmount: 0,
+    expenses: [],
   },
   expensesLocal: [],
   expenses: {
     amount: "",
     expensesType: "",
     userId: 0,
+    createdAt: new Date(),
+    updatedAt: new Date(),
   },
   expensesDate: {
     startDate: new Date(),
@@ -61,10 +64,14 @@ export const expensesStore = create<ExpensesStoreState>()((set) => ({
     })),
   getExpenses: async (budgetId: number, endDate: Date, startDate: Date) => {
     try {
+      const selectedEnd = new Date(endDate);
+      selectedEnd.setHours(23, 59, 59, 999);
+
+      const formattedEnd = format(selectedEnd, "yyyy-MM-dd'T'HH:mm:ssXXX");
       const result = await api.post("/expenses/get-expenses", {
         budgetId,
-        endDate,
-        startDate,
+        endDate: formattedEnd,
+        startDate: format(startDate, "yyyy-MM-dd'T'HH:mm:ssXXX"),
       });
       set({ expensesFetch: result.data });
     } catch (error) {
@@ -74,10 +81,11 @@ export const expensesStore = create<ExpensesStoreState>()((set) => ({
 
   saveExpense: async (expensesLocal: Expenses[]): Promise<void> => {
     try {
-      const result = await api.post("/expenses/add", expensesLocal);
-      console.log(result.data);
+      await api.post("/expenses/add", expensesLocal);
+      const { showAlert } = useAlertStore.getState();
+      showAlert(`Budget has been added successfully!`, "success", "Success");
     } catch (error) {
-      console.error("Error:", error);
+      handleAxiosError(error);
     }
   },
   expensesLocalSave: (newExpense) =>
@@ -91,6 +99,8 @@ export const expensesStore = create<ExpensesStoreState>()((set) => ({
         amount: "",
         expensesType: "",
         userId: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
     })),
   clearLocal: () =>

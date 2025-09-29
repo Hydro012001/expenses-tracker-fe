@@ -1,4 +1,5 @@
-import { ExpensesResponse, Expenses } from "@/store/expensesStore";
+import { Expenses } from "@/store/expensesStore";
+import { isWithinInterval, parseISO } from "date-fns";
 
 type CategoryBreakdown = { name: string; value: number };
 
@@ -9,16 +10,14 @@ interface CategoryBreakdownResult {
 }
 
 export function getCategoryBreakdown(
-  expenses: ExpensesResponse,
-  selectedMonth: string
+  data: Expenses[],
+  startDate: string,
+  endDate: string
 ): CategoryBreakdownResult {
-  // filter by month
-  const filteredExpenses = expenses.data.filter(
-    (expense) =>
-      new Date(String(expense.createdAt)).toLocaleString("default", {
-        month: "long",
-      }) === selectedMonth
-  );
+  const filteredExpenses = data.filter((expense) => {
+    const expenseDate = parseISO(String(expense.createdAt));
+    return isWithinInterval(expenseDate, { start: startDate, end: endDate });
+  });
 
   // reduce by category
   const breakdownMap = filteredExpenses.reduce<Record<string, number>>(
