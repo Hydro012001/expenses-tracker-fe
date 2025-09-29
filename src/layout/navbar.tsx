@@ -1,14 +1,13 @@
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { NavLink } from "react-router-dom";
-import { ReactNode } from "react";
+
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { useAuthStore } from "@/store/authStore";
-interface NavbarProps {
-  children?: ReactNode;
-}
-export default function Navbar({ children }: NavbarProps) {
+import { MenuIcon, MountainIcon } from "@/icons/svg/svg_icon";
+
+export default function Navbar() {
   const { theme, setTheme } = useTheme();
   const logout = useAuthStore((state) => state.logout);
   const navLinkClasses =
@@ -57,7 +56,7 @@ export default function Navbar({ children }: NavbarProps) {
             </div>
           </SheetContent>
         </Sheet>
-        <NavLink to="#" className="mr-6 hidden lg:flex lg:items-center gap-2 ">
+        <NavLink to="/" className="mr-6 hidden lg:flex lg:items-center gap-2 ">
           <MountainIcon className="h-9 w-9" />
           <span className="font-bold text-primary">ExpTrack</span>
         </NavLink>
@@ -104,64 +103,6 @@ export default function Navbar({ children }: NavbarProps) {
           </div>
         </nav>
       </header>
-
-      <main>{children}</main>
     </>
-  );
-}
-type MenuIconProps = React.SVGProps<SVGSVGElement>;
-function MenuIcon(props: MenuIconProps) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <line x1="4" x2="20" y1="12" y2="12" />
-      <line x1="4" x2="20" y1="6" y2="6" />
-      <line x1="4" x2="20" y1="18" y2="18" />
-    </svg>
-  );
-}
-
-function MountainIcon(props: MenuIconProps) {
-  return (
-    <svg
-      width={200}
-      height={200}
-      viewBox="0 0 200 200"
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      {...props}
-    >
-      <circle
-        cx={100}
-        cy={100}
-        r={80}
-        stroke="#6464FF"
-        strokeWidth={10}
-        fill="none"
-        strokeDasharray={251.2}
-        strokeDashoffset={50}
-      />
-      <text
-        x="50%"
-        y="50%"
-        fontSize={60}
-        fontWeight="bold"
-        fill="#6464FF"
-        textAnchor="middle"
-        dominantBaseline="middle"
-      >
-        {"$"}
-      </text>
-    </svg>
   );
 }

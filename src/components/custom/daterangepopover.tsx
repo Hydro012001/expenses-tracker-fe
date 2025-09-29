@@ -13,17 +13,27 @@ import {
 
 type DatePickerWithRangeProps = {
   className?: string;
-  value?: DateRange;
-  onChange?: (date: DateRange) => void;
+  value: DateRange | undefined;
+  onChange: (date: DateRange | undefined) => void;
+  disabled?: boolean;
 };
 
 export function DatePickerWithRangePopover({
   className,
   value,
   onChange,
+  disabled = false,
 }: DatePickerWithRangeProps) {
-  const handleSelect = (selected: DateRange) => {
-    onChange?.(selected);
+  const handleSelect = (selected: DateRange | undefined) => {
+    if (!selected) {
+      onChange(undefined);
+      return;
+    }
+
+    onChange({
+      from: selected.from ? selected.from : undefined,
+      to: selected.to ? selected.to : undefined,
+    });
   };
 
   return (
@@ -33,12 +43,13 @@ export function DatePickerWithRangePopover({
           <Button
             id="date"
             variant="outline"
+            disabled={disabled}
             className={cn(
               "w-[250px] justify-start text-left font-normal",
               !value && "text-muted-foreground"
             )}
           >
-            <CalendarIcon />
+            <CalendarIcon className="mr-2 h-4 w-4" />
             {value?.from ? (
               value.to ? (
                 <>
@@ -57,6 +68,7 @@ export function DatePickerWithRangePopover({
           <Calendar
             initialFocus
             mode="range"
+            required={false}
             defaultMonth={value?.from}
             selected={value}
             onSelect={handleSelect}
