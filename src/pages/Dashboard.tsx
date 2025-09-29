@@ -536,7 +536,7 @@ export default function Dashboard() {
                     outerRadius={100}
                     label
                   >
-                    {breakdown.map((entry, index) => (
+                    {breakdown.map((_, index) => (
                       <Cell
                         key={`cell-${index}`}
                         fill={COLORS[index % COLORS.length]}
