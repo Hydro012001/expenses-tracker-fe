@@ -23,7 +23,7 @@
     "axios": "^1.8.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "date-fns": "^4.1.0",
+    "date-fns": "^3.6.0",
     "dotenv": "^17.2.2",
     "lucide-react": "^0.479.0",
     "middleware": "^1.0.0",
