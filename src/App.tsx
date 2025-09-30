@@ -1,8 +1,6 @@
 import { HashRouter, Route, Routes } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
-
 import About from "./pages/About";
-
 import Profile from "./pages/Profile";
 import Login from "./pages/auth/Login";
 import { ProtectedRoutes } from "./components/ProtectedRoutes";
