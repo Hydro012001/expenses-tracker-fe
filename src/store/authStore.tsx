@@ -6,7 +6,6 @@ import axios from "axios";
 import { handleAxiosError } from "@/utils/axiosErrorHelper";
 
 interface AuthState {
-  //   user: { role: string } | null;
   login: (user: User, onSuccess: () => void) => void;
   logout: () => void;
   verify: (token: string) => Promise<boolean>;
