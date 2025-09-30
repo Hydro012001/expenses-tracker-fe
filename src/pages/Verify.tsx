@@ -9,13 +9,14 @@ import {
 import { useAuthStore } from "@/store/authStore";
 import { CheckCircle, Loader2, XCircle } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export default function Verify() {
   const [loading, setLoading] = useState(false);
   const [verified, setVerified] = useState(false);
   const [invalidToken, setInvalidToken] = useState(false); // ✅ NEW STATE
-  const params = new URLSearchParams(window.location.search);
+  const { search } = useLocation();
+  const params = new URLSearchParams(search);
   const verified_token = params.get("token");
   const { verify } = useAuthStore();
 
