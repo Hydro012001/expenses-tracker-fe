@@ -1,4 +1,4 @@
-import { HashRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import About from "./pages/About";
 import Profile from "./pages/Profile";
@@ -14,7 +14,7 @@ import Verify from "./pages/Verify";
 function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-      <HashRouter>
+      <BrowserRouter>
         <Routes>
           <Route path="/verify" element={<Verify />} />
           <Route path="/login" element={<Login />} />
@@ -29,7 +29,7 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
         <GlobalAlert />
-      </HashRouter>
+      </BrowserRouter>
     </ThemeProvider>
   );
 }
