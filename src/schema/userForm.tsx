@@ -1,0 +1,25 @@
+import { z } from "zod";
+export const userFormSchema = z.object({
+  email: z.string().email({ message: "Invalid email address" }),
+  password: z
+    .string()
+    .min(8, { message: "at least 8 characters long" })
+    .regex(/[A-Z]/, {
+      message: "at least one uppercase letter",
+    })
+    .regex(/[a-z]/, {
+      message: "at least one lowercase letter",
+    })
+    .regex(/[0-9]/, { message: "at least one number" })
+    .regex(/[\W_]/, {
+      message: "at least one special character",
+    }),
+  // password: z.string(),
+});
+
+export const signUpFormSchema = z.object({
+  email: z.string().email({ message: "Invalid email address" }),
+  name: z.string(),
+  confirmPassword: z.string(),
+  password: z.string(),
+});
