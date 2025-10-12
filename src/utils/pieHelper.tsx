@@ -1,5 +1,6 @@
 import { Expenses } from "@/store/expensesStore";
-import { isWithinInterval, parseISO } from "date-fns";
+import { isWithinInterval } from "date-fns";
+import { normalizeToDate } from "./helpers";
 
 type CategoryBreakdown = { name: string; value: number };
 
@@ -11,12 +12,21 @@ interface CategoryBreakdownResult {
 
 export function getCategoryBreakdown(
   data: Expenses[],
-  startDate: string,
-  endDate: string
+  startDate: string | Date,
+  endDate: Date | string
 ): CategoryBreakdownResult {
   const filteredExpenses = data.filter((expense) => {
-    const expenseDate = parseISO(String(expense.createdAt));
-    return isWithinInterval(expenseDate, { start: startDate, end: endDate });
+    const expenseDate = normalizeToDate(expense.createdAt);
+    if (!expenseDate) return false;
+    const start = normalizeToDate(startDate);
+    const end = normalizeToDate(endDate);
+
+    if (!start || !end) return false;
+
+    return isWithinInterval(expenseDate, {
+      start,
+      end,
+    });
   });
 
   // reduce by category

@@ -4,7 +4,7 @@ import { useAlertStore } from "./alertStore";
 import { useButtonStateStore } from "./uiStateStore";
 import { handleAxiosError } from "@/utils/axiosErrorHelper";
 import { Expenses } from "./expensesStore";
-import { endOfDay } from "date-fns";
+import { normalizeToDate } from "@/utils/helpers";
 
 interface Budget {
   id?: number;
@@ -98,10 +98,6 @@ export const budgetStore = create<BudgetStoreState>()((set) => ({
     startDate?: Date
   ) => {
     try {
-      const normalizeToDate = (date?: Date) => {
-        if (!date) return null;
-        return endOfDay(date);
-      };
       const result = await api.post("/budget/get-budget-expenses/", {
         budgetId,
         endDate: normalizeToDate(endDate),
@@ -117,8 +113,6 @@ export const budgetStore = create<BudgetStoreState>()((set) => ({
           endDate: endDate,
         },
       });
-
-      console.log("totalBudgetExpenses", result.data);
     } catch (error) {
       console.error("Error:", error);
     }

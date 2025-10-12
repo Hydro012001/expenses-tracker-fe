@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getCookie } from "./authUtils";
+import { getCookie, removeToken } from "./authUtils";
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export const api = axios.create({
@@ -11,7 +11,7 @@ export const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = getCookie("token");
+    const token = getCookie("expenses_token");
 
     if (token) {
       config.headers["authorization"] = `Bearer ${token}`;
@@ -19,4 +19,17 @@ api.interceptors.request.use(
     return config;
   },
   (error) => Promise.reject(error)
+);
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status;
+
+    if (status === 400 || status === 401) {
+      removeToken("expenses_token");
+    }
+
+    return Promise.reject(error);
+  }
 );

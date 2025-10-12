@@ -38,6 +38,7 @@ export default function Signup() {
       name: "",
       confirmPassword: "",
     },
+    mode: "onChange",
   });
 
   // Handle signup form submission
@@ -163,7 +164,14 @@ export default function Signup() {
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" className="w-full">
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={
+                      !signupForm.formState.isValid ||
+                      signupForm.formState.isSubmitting
+                    }
+                  >
                     Create Account
                   </Button>
                 </form>

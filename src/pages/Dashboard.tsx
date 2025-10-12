@@ -70,9 +70,9 @@ export default function Dashboard() {
     expenses,
     expensesLocal,
     expensesLocalSave,
-    clear,
     saveExpense,
     clearLocal,
+    clear,
   } = expensesStore();
   const {
     getBudgetExpenses,
@@ -130,11 +130,13 @@ export default function Dashboard() {
   const handleSaveBudget = async () => {
     await saveBudget(budget);
     getBudget();
-    getBudgetExpenses(
-      selectBudgetIDData,
-      expensesDate?.endDate,
-      totalBudgetExpenses.budget_expenses.startDate
-    );
+
+    window.location.reload();
+    // getBudgetExpenses(
+    //   selectBudgetIDData,
+    //   expensesDate?.endDate,
+    //   totalBudgetExpenses.budget_expenses.startDate
+    // );
 
     setDisabled(false);
   };
@@ -346,7 +348,10 @@ export default function Dashboard() {
                 </DialogTrigger>
                 <DialogContent className="w-[50%]  max-w-[90vw] p-0">
                   <div className="inline-block p-4">
-                    <div className=" p-1">
+                    <DialogHeader>
+                      <DialogTitle>Add Expenses</DialogTitle>
+                    </DialogHeader>
+                    <div className="mt-2 p-1">
                       <div className="w-[100%]">
                         <div className="grid w-full items-center gap-4 mb-4">
                           <div className="flex flex-col space-y-1.5">
@@ -377,7 +382,7 @@ export default function Dashboard() {
                               }
                               value={expenses.expensesType}
                             >
-                              <SelectTrigger id="expenses">
+                              <SelectTrigger id="expenses" className="w-[100%]">
                                 <SelectValue placeholder="Select expense type" />
                               </SelectTrigger>
                               <SelectContent position="popper">
@@ -400,7 +405,7 @@ export default function Dashboard() {
                           <Button
                             variant="outline"
                             className="w-[40%]"
-                            onClick={clear}
+                            onClick={clearLocal}
                           >
                             Clear
                           </Button>
@@ -438,6 +443,7 @@ export default function Dashboard() {
                         </div>
                         <Button
                           className="cursor-pointer w-[100%]"
+                          disabled={expensesLocal.length === 0 ? true : false}
                           variant={"default"}
                           onClick={handleSave}
                         >
