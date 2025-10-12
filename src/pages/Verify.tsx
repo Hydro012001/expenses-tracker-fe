@@ -23,7 +23,7 @@ export default function Verify() {
   const [countdown, setCountdown] = useState(5);
   const navigate = useNavigate();
 
-  const handleCountDown = (redirectPath = "/login", startSeconds = 5) => {
+  const handleCountDown = (redirectPath = "/#/login", startSeconds = 5) => {
     setCountdown(startSeconds);
     let seconds = startSeconds;
 
@@ -48,19 +48,19 @@ export default function Verify() {
       setInvalidToken(true);
       setLoading(false);
       // showAlert("There is no token", "info", "Invalid Token");
-      handleCountDown("/login");
+      handleCountDown("/#/login");
     } else {
       const is_verified = await verify(verified_token);
 
       if (is_verified) {
         setVerified(true);
         setLoading(false);
-        handleCountDown("/login");
+        handleCountDown("/#/login");
       } else {
         setInvalidToken(true);
         setLoading(false);
         // showAlert("Invalid token", "info", "Invalid Token");
-        handleCountDown("/login");
+        handleCountDown("/#/login");
       }
     }
   };
