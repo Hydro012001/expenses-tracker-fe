@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { useAlertStore } from "./alertStore";
 import axios from "axios";
 import { handleAxiosError } from "@/utils/axiosErrorHelper";
+import { removeToken } from "@/utils/authUtils";
 
 interface AuthState {
   login: (user: User, onSuccess: () => void) => void;
@@ -15,7 +16,7 @@ export const useAuthStore = create<AuthState>(() => ({
   login: async (payload: User, onSuccess) => {
     try {
       const result = await api.post("/login", payload);
-      document.cookie = `token=${result.data.token}; path=/; max-age=86400`;
+      document.cookie = `expenses_token=${result.data.token}; path=/; max-age=86400`;
       onSuccess();
     } catch (error: unknown) {
       const { showAlert } = useAlertStore.getState();
@@ -44,7 +45,7 @@ export const useAuthStore = create<AuthState>(() => ({
   },
   logout: () => {
     console.log("Logout");
-    document.cookie = "token=; path=/; max-age=0";
+    removeToken("expenses_token");
     window.location.href = "/login";
   },
   verify: async (token) => {

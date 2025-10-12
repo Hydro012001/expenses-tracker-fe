@@ -30,7 +30,7 @@ import { Eye, EyeOff } from "lucide-react";
 function Login() {
   // const [switchAuth, setSwitchAuth] = useState(true);
   // const { showAlert } = useAlertStore.getState();
-  const isAuthenticated = getCookie("token");
+  const isAuthenticated = getCookie("expenses_token");
   const loginUser = useAuthStore((state) => state.login);
   const [showPassword, setShowPassword] = useState(false);
   // const { addUser } = userStore();
