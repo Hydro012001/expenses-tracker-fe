@@ -65,7 +65,7 @@ function Login() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/");
+      navigate("/#/");
     }
   }, [isAuthenticated, navigate]);
 
@@ -190,7 +190,7 @@ function Login() {
                 <div className="text-muted-foreground flex justify-center gap-1 text-sm mt-3">
                   Don&apos;t have an account?{" "}
                   <a
-                    href="/signup"
+                    href="/#/signup"
                     className="text-primary dark:text-foreground font-medium hover:underline"
                   >
                     Sign up

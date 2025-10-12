@@ -49,7 +49,7 @@ export default function Signup() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/");
+      navigate("/#/");
     }
   }, [isAuthenticated, navigate]);
 
@@ -179,7 +179,7 @@ export default function Signup() {
               <div className="text-muted-foreground flex justify-center gap-1 text-sm mt-3">
                 <p>Already a user?</p>
                 <a
-                  href="/login"
+                  href="/#/login"
                   className="text-primary dark:text-foreground font-medium hover:underline"
                 >
                   Login

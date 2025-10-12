@@ -46,7 +46,7 @@ export const useAuthStore = create<AuthState>(() => ({
   logout: () => {
     console.log("Logout");
     removeToken("expenses_token");
-    window.location.href = "/login";
+    window.location.href = "/#/login";
   },
   verify: async (token) => {
     try {
